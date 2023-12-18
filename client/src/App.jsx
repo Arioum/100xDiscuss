@@ -1,12 +1,14 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import './App.css';
 import UserAuth from './pages/UserAuth';
+import Home from './pages/Home';
+import './App.css';
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path='/' element={<UserAuth />} />
+        <Route exact path='/' element={<UserAuth />} />
+        <Route path='/home' element={<Home />} />
       </Routes>
     </Router>
   );
