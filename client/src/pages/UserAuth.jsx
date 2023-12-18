@@ -1,29 +1,49 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Box, Button, Alert, TextField } from '@mui/material';
 import axios from 'axios';
-import { Button } from '@mui/material';
-import Box from '@mui/material/Box';
-import TextField from '@mui/material/TextField';
 
 const UserAuth = () => {
+  const navigate = useNavigate();
   const [userLogin, setUserLogin] = useState({
-    username: '',
+    email: '',
     password: '',
   });
+  const [resError, setResError] = useState(null);
 
   const handleFormChange = (e) => {
     const { value, name } = e.target;
-    setUserLogin((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setUserLogin((prev) => ({ ...prev, [name]: value }));
   };
 
-  const onFormSubmit = (e) => {
+  const onFormSubmit = async (e) => {
     e.preventDefault();
-    axios
-      .post('http://localhost:4000/signin', userLogin)
-      .catch((err) => console.log(err));
+    try {
+      const res = await axios.post('http://localhost:4000/signin', userLogin);
+      const jwtToken = res.data.token ? res.data.token : null;
+      if (jwtToken) {
+        localStorage.setItem('jwtToken-100xDiscuss', jwtToken);
+      }
+      navigate('/home');
+    } catch (err) {
+      setResError(err.response.data.message);
+    }
   };
+
+  useEffect(() => {
+    const jwtToken = localStorage.getItem('jwtToken-100xDiscuss');
+    axios.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
+
+    async function validateUserWithJWT() {
+      await axios.post('http://localhost:4000').then((res) => {
+        console.log(res);
+        if (res.data.message === 'Token is valid') {
+          navigate('/home')
+        }
+      });
+    }
+    validateUserWithJWT();
+  }, [navigate]);
 
   return (
     <div>
@@ -41,13 +61,15 @@ const UserAuth = () => {
         autoComplete='off'
       >
         <h2>Sign in to 100xDiscuss</h2>
-        <h4>A chat platform for 100xCohort</h4>
+        <h4>A doubt discussion platform for 100xCohort</h4>
+        {resError && <Alert severity='error'>{resError}</Alert>}
         <TextField
           required
+          type='email'
           id='standard'
-          label='Username'
+          label='Email'
           variant='standard'
-          name='username'
+          name='email'
           onChange={(e) => handleFormChange(e)}
         />
         <TextField
@@ -68,7 +90,6 @@ const UserAuth = () => {
           /> */}
         <Button
           variant='contained'
-          color='success'
           size='large'
           type='submit'
           sx={{ width: '100%' }}
